@@ -1,0 +1,28 @@
+[project]
+name = "multi-gpu-training"
+version = "0.1.0"
+description = "Add your description here"
+authors = [
+    { name = "Jeroen Van Goey", email = "j.vangoey@instadeep.com" }
+]
+dependencies = [
+    "torch>=2.3.1",
+    "torchvision>=0.18.1",
+    "line-profiler>=4.1.3",
+]
+readme = "README.md"
+requires-python = ">= 3.8"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.rye]
+managed = true
+dev-dependencies = []
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/multi_gpu_training"]
