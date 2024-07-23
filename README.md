@@ -5,40 +5,39 @@ The material in this repo demonstrates multi-GPU training using PyTorch. Part 1 
 
 ### Setup
 
-Make sure you can run Python on Adroit:
+Make sure you can run Python on MareNostrum 5:
 
 ```bash
-$ ssh <YourNetID>@adroit.princeton.edu  # VPN required if off-campus
-$ git clone https://github.com/PrincetonUniversity/multi_gpu_training.git
-$ cd multi_gpu_training
-$ module load anaconda3/2023.9
-(base) $ python --version
-Python 3.11.5
+mylaptop$> ssh {username}@glogin1.bsc.es # General purpuse login node. use `alogin1.bsc.es` for the GPU login node
+[{username}@glogin1 ~]$ module load anaconda3/2024.02
+load ANACONDA/2024.02 (PATH)
+[{username}@glogin1 ~]$ which python
+/apps/ACC/ANACONDA/2024.02/bin/python
+[{username}@glogin1 ~]$ python --version
+Python 3.11.7
 ```
 
-<!--
-## Attendance
+The login nodes are the only nodes accessible from external networks, and **no connections from the cluster to the outside world are permitted for security reasons.**
 
-- Please check-in using [this link](https://cglink.me/2gi/c1471627125105938).
+> [!WARNING] 
+> All file transfers from/to the outside must be executed from your local machine and **not within the cluster.**
 
-## Workshop Survey
+In general, to copy files or directories from an external machine to MareNostrum 5:
 
-Toward the end of the workshop please complete [this survey](https://forms.gle/pGi2tkzb7WCtVMcQ6).
--->
+```bash
+mylaptop$> scp -r "mylaptop_SOURCE_dir" {username}@transfer1.bsc.es:"MN5_DEST_dir"
+```
 
-<!--
-## Reminders
+So to use this repository in MareNostrum v5
 
-- The live workshop will be recorded
-- Zoom: [https://princeton.zoom.us/my/picscieworkshop](https://princeton.zoom.us/my/picscieworkshop)
-- Request an account on [Adroit](https://forms.rc.princeton.edu/registration/?q=adroit) if needed
-- To use GPUs during the live workshop: `#SBATCH --reservation=multigpu`
--->
+```bash
+mylaptop$> git clone https://github.com/BioGeek/multi_gpu_training.git
+mylaptop$> scp -r "multi_gpu_training" {username}@transfer1.bsc.es:"~/multi_gpu_training"
+```
 
-### Getting Help
-
-If you encounter any difficulties with the material in this guide then please send an email to <a href="mailto:cses@princeton.edu">cses@princeton.edu</a> or attend a <a href="https://researchcomputing.princeton.edu/education/help-sessions">help session</a>.
 
 ### Authorship
 
-This guide was created by Mengzhou Xia, Alexander Wettig and Jonathan Halverson. Members of Princeton Research Computing made contributions to this material.
+The [original version of this guide](https://github.com/PrincetonUniversity/multi_gpu_training) was created by Mengzhou Xia, Alexander Wettig and Jonathan Halverson. Members of Princeton Research Computing made contributions to this material.
+
+Tis version has been adapted for the MareNostrum 5 supercomputer by Jeroen Van Goey
