@@ -5,3 +5,5 @@ build/
 dist/
 wheels/
 *.egg-info
+
+01_single_gpu/data/MNIST/raw/*

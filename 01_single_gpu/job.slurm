@@ -16,7 +16,7 @@ echo "Running on host" $(hostname)
 printenv | grep -i slurm | sort
 
 module purge
-module load anaconda3/2023.9
-conda activate torch-env
+module load python/3.12.1
+. .venv/bin/activate
 
 kernprof -o ${SLURM_JOBID}.lprof -l mnist_classify.py --epochs=3

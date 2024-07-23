@@ -32,9 +32,12 @@ So to use this repository in MareNostrum v5
 
 ```bash
 mylaptop$> git clone https://github.com/BioGeek/multi_gpu_training.git
-mylaptop$> scp -r "multi_gpu_training" {username}@transfer1.bsc.es:"~/multi_gpu_training"
+mylaptop$> scp -r "multi_gpu_training" {username}@transfer1.bsc.es:"~/multi_gpu_training" #TODO use rsync instead?
 ```
 
+> [!NOTE]  
+> This is the reason why this repository contains a virtual environment (`.venv` folder). If you need to install
+> an extra package you can't pip install it on MareNostrum but you will have to add it locally and sync the .venv folder
 
 ### Authorship
 

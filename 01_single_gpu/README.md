@@ -6,7 +6,17 @@ Here we train a CNN on the MNIST dataset using a single GPU as an example. We pr
 
 This tutorial uses PyTorch but the steps are the similar for TensorFlow. See our [TensorFlow](https://researchcomputing.princeton.edu/support/knowledge-base/tensorflow#install) page and the [performance tuning guide](https://tigress-web.princeton.edu/~jdh4/TensorflowPerformanceOptimization_GTC2021.pdf).
 
-## Step 1: Activate the Environment
+## Step 1: Load modules
+
+
+```bash
+mylaptop$> ssh {username}@glogin1.bsc.es # General purpuse login node. use `alogin1.bsc.es` for the GPU login node
+[{username}@glogin1 ~]$ module load mkl/2024.0 nvidia-hpc-sdk/23.11-cuda11.8 openblas/0.3.27-gcc cudnn/9.0.0-cuda11 tensorrt/10.0.0-cuda11 impi/2021.11 hdf5/1.14.1-2-gcc gcc/11.4.0 python/3.11.5-gcc nccl/2.19.4 pytorch/2.4.0
+$ conda create --name torch-env pytorch torchvision pytorch-cuda=12.1 -c pytorch -c nvidia -y
+$ conda activate torch-env
+$ conda install line_profiler --channel conda-forge
+```
+
 
 For simplicity we will use a pre-installed Conda environmnet. Run these commands to activate the environment:
 
@@ -37,7 +47,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
 Next, download the data while on the login node since the compute nodes do not have internet access:
 
 ```
-(torch-env) $ python download_mnist.py
+(torch-env) $ python download_data.py
 ```
 
 Below is the Slurm script:
@@ -183,14 +193,3 @@ It is essential to optimize your code before going to multi-GPU training since t
 
 Next, we focus on scaling the code to multiple GPUs (go to [next section](../02_pytorch_ddp)).
 
-## How was the Conda environment made?
-
-Please do not do this during the workshop. Your `/home` directory on Adroit probably has a capacity of 9.3 GB. To store Conda environments in another location see [this page](https://researchcomputing.princeton.edu/support/knowledge-base/checkquota). See the Research Computing knowledge base on [PyTorch](https://researchcomputing.princeton.edu/support/knowledge-base/pytorch).
-
-```bash
-$ ssh <YourNetID>@adroit.princeton.edu
-$ module load anaconda3/2023.9
-$ conda create --name torch-env pytorch torchvision pytorch-cuda=12.1 -c pytorch -c nvidia -y
-$ conda activate torch-env
-$ conda install line_profiler --channel conda-forge
-```
