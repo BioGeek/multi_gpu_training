@@ -115,11 +115,11 @@ def main():
         transforms.ToTensor(),
         transforms.Normalize((0.1307,), (0.3081,))
         ])
-    dataset1 = datasets.MNIST('data',
+    dataset1 = datasets.MNIST('../01_single_gpu/data',
                               train=True,
                               download=False,
                               transform=transform)
-    dataset2 = datasets.MNIST('data',
+    dataset2 = datasets.MNIST('../01_single_gpu/data',
                               train=False,
                               download=False,
                               transform=transform)

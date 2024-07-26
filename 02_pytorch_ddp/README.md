@@ -167,11 +167,24 @@ In the script above, `MASTER_PORT`, `MASTER_ADDR` and `WORLD_SIZE` are set. The 
 You can run the simple DPP script with:
 
 ```bash
-$ cd multi_gpu_training/02_pytorch_ddp
-$ sbatch --reservation=multigpu simple.slurm
+[{username}@alogin1 multi_gpu_training]$ cd 02_pytorch_ddp
+$ sbatch --account={account} --qos={qos} simple.slurm
 ```
 
-Take a look at the output. Does it all make sense?
+Take a look at the output below. Does it all make sense?
+
+```bash
+Hello from rank 0 of 4 on as04r5b14 where there are 2 allocated GPUs per node.
+Hello from rank 1 of 4 on as04r5b14 where there are 2 allocated GPUs per node.
+Hello from rank 2 of 4 on as04r5b15 where there are 2 allocated GPUs per node.
+Hello from rank 3 of 4 on as04r5b15 where there are 2 allocated GPUs per node.
+Group initialized? True
+host: as04r5b15, rank: 2, output: tensor([[-1.2987, -1.2987, -0.7891]], device='cuda:0')
+host: as04r5b14, rank: 0, output: tensor([[-1.1328, -1.3812, -0.8519]], device='cuda:0')
+host: as04r5b15, rank: 3, output: tensor([[-1.0768, -1.2464, -0.9895]], device='cuda:1')
+host: as04r5b14, rank: 1, output: tensor([[-1.0786, -1.0582, -1.1620]], device='cuda:1')
+
+```
 
 ### Job Arrays
 
