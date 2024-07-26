@@ -3,7 +3,7 @@
 For background on model parallelism, FSDP and related technologies, see [slides](slides.pdf). We also recommend the blog [Everything about Distributed Training and Efficient Finetuning](https://sumanthrh.com/post/distributed-and-efficient-finetuning/) for a more comprehensive overview over these subjects.
 
 ## Example
-***NOTE***: This demo is only meant to illustrate a simple and transparent training run with FSDP, and should not be used as a deep-learning training script. We intentially omit common features such as model checkpoints, evaluation, etc.
+***NOTE***: This demo is only meant to illustrate a simple and transparent training run with FSDP, and should not be used as a deep-learning training script. We intentionally omit common features such as model checkpoints, evaluation, etc.
 Most pytorch training libraries support FSDP out-of-the-box, e.g., see the docs for [huggingface accelerate](https://huggingface.co/docs/accelerate/usage_guides/fsdp), [pytorch lightning](https://lightning.ai/docs/pytorch/stable/api/lightning.pytorch.strategies.FSDPStrategy.html), [mosaic composer](https://docs.mosaicml.com/projects/composer/en/stable/notes/distributed_training.html#fullyshardeddataparallel-fsdp).
 
 We are fine-tuning a [CodeLlama-7b](https://huggingface.co/codellama/CodeLlama-7b-hf) model on a dataset of [chess moves](https://huggingface.co/datasets/laion/strategic_game_chess) (in text notation). Full fine-tuning of all 7b parameters results in more parameters than fit on a single 80GB A100 GPU. We therefore use [Fully Sharded Data Parallel (FSDP)](https://pytorch.org/tutorials/intermediate/FSDP_tutorial.html) to shard the model parameters on each device.

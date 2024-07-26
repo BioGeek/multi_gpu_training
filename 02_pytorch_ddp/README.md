@@ -430,8 +430,8 @@ $ git clone https://github.com/PrincetonUniversity/multi_gpu_training.git
 $ cd multi_gpu_training/02_pytorch_ddp
 $ module load anaconda3/2023.9
 $ conda activate torch-env
-(torch-env) $ python download_data.py
-(torch-env) $ sbatch --reservation=multigpu job.slurm
+[{username}@alogin1 ~]$ python download_data.py
+[{username}@alogin1 ~]$ sbatch --reservation=multigpu job.slurm
 ```
 
 ## Memory issues

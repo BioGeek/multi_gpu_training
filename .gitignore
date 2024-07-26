@@ -11,3 +11,4 @@ wheels/
 
 pytorch.sif
 
+**/*.lprof

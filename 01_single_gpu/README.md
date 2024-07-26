@@ -56,18 +56,17 @@ echo "Running on host" $(hostname)
 printenv | grep -i slurm | sort
 
 module purge
-module load anaconda3/2023.9
-conda activate /home/jdh4/.conda/envs/torch-env
+module load singularity/3.11.5
 
-kernprof -o ${SLURM_JOBID}.lprof -l mnist_classify.py --epochs=3
+singularity run --nv ../pytorch.sif kernprof -o ${SLURM_JOBID}.lprof -l mnist_classify.py --epochs=3
 ```
 
-`kernprof` is a profiler that wraps Python. Adroit has two different A100 nodes. Learn how to choose [specific nodes](https://researchcomputing.princeton.edu/systems/adroit#gpus).
+[`kernprof`](https://kernprof.readthedocs.io/en/latest/kernprof.html) is a profiler that wraps Python.
 
 Finally, submit the job.
 
 ```bash
-(torch-env) $ sbatch job.slurm
+[{username}@alogin1 ~]$ sbatch job.slurm
 ```
 
 You should find that the code runs in about 20-40 seconds with 1 CPU-core depending on which H100 GPU node was used:
@@ -88,19 +87,14 @@ Memory Efficiency: 7.24% of 8.00 GB
 
 For jobs that run for longer than 1 minute, one should use the `jobstats` command instead of `seff`. Use `shistory -n` to see which node was used or look in the `slurm-#######.out` file.
 
-Some variation in the run time is expected when multiple users are running on the same node. Also, the two A100 GPU nodes are not equal:
-
-| hostname | CPU | GPU |
-| ----------- | ----------- | ----------- |
-| adroit-h11g1 | Intel Xeon Gold 6442Y @ 2.6GHz | NVIDIA A100 80GB PCIe |
-| adroit-h11g2 | Intel Xeon Gold 6342  @ 2.8GHz | NVIDIA A100-PCIE-40GB |
+Some variation in the run time is expected when multiple users are running on the same node. 
 
 ## Step 3: Analyze the Profiling Data
 
-We installed [line_profiler](https://researchcomputing.princeton.edu/python-profiling) into the Conda environment and profiled the code. To analyze the profiling data:
+We installed [line_profiler](https://researchcomputing.princeton.edu/python-profiling) into the Singularity container and profiled the code. To analyze the profiling data:
 
 ```
-(torch-env) $ python -m line_profiler -rmt *.lprof 
+[{username}@alogin1 ~]$ python -m line_profiler -rmt *.lprof 
 Timer unit: 1e-06 s
 
 Total time: 30.8937 s
@@ -152,7 +146,7 @@ One technique that was discussed in the [Performance Tuning Guide](https://pytor
 In `mnist_classify.py`, change `num_workers` from 1 to 8. And then in `job.slurm` change `--cpus-per-task` from 1 to 8. Then run the script again and note the speed-up:
 
 ```
-(torch-env) $ sbatch --reservation=multigpu job.slurm
+[{username}@alogin1 ~]$ sbatch --reservation=multigpu job.slurm
 ```
 
 How did the profiling data change? Watch the [video](https://www.youtube.com/watch?v=wqTgM-Wq4YY&t=296s) for the solution. For consistency between the Slurm script and PyTorch script, one can use:

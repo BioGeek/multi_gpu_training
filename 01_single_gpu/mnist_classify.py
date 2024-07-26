@@ -98,6 +98,8 @@ def main():
                         help='how many batches to wait before logging training status')
     parser.add_argument('--save-model', action='store_true', default=False,
                         help='For Saving the current Model')
+    parser.add_argument('--num-workers', type=int, default=1, metavar='W',
+                        help='number of worker processes for data loading (default: 1)')
     args = parser.parse_args()
     use_cuda = not args.no_cuda and torch.cuda.is_available()
     use_mps = not args.no_mps and torch.backends.mps.is_available()
@@ -114,7 +116,7 @@ def main():
     train_kwargs = {'batch_size': args.batch_size}
     test_kwargs = {'batch_size': args.test_batch_size}
     if use_cuda:
-        cuda_kwargs = {'num_workers': 1,
+        cuda_kwargs = {'num_workers': args.num_workers,
                        'pin_memory': True,
                        'shuffle': True}
         train_kwargs.update(cuda_kwargs)

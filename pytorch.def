@@ -2,12 +2,6 @@ BootStrap: docker
 From: nvcr.io/nvidia/pytorch:24.07-py3
 
 %post
-    # Install system dependencies
-    apt-get update && apt-get install -y \
-        git \
-        curl \
-        && rm -rf /var/lib/apt/lists/*
-
     # Install additional Python packages
     pip install --no-cache-dir \
         torchvision==0.19.0 \
