@@ -5,5 +5,9 @@ build/
 dist/
 wheels/
 *.egg-info
+.venv
 
 01_single_gpu/data/MNIST/raw/*
+
+pytorch.sif
+

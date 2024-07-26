@@ -1,46 +1,62 @@
 # Multi-GPU Training with PyTorch: Data and Model Parallelism
 
-### About
+## About
 The material in this repo demonstrates multi-GPU training using PyTorch. Part 1 covers how to optimize single-GPU training. The necessary code changes to enable multi-GPU training using the data-parallel and model-parallel approaches are then shown. This workshop aims to prepare researchers to use the new H100 GPU nodes as part of Princeton Language and Intelligence.
 
-### Setup
+## Singularity Containers
 
-Make sure you can run Python on MareNostrum 5:
+The login nodes on MareNostrum 5 are the only nodes accessible from external networks, and **no connections from the cluster to the outside world are permitted for security reasons.**
 
-```bash
-mylaptop$> ssh {username}@glogin1.bsc.es # General purpuse login node. use `alogin1.bsc.es` for the GPU login node
-[{username}@glogin1 ~]$ module load anaconda3/2024.02
-load ANACONDA/2024.02 (PATH)
-[{username}@glogin1 ~]$ which python
-/apps/ACC/ANACONDA/2024.02/bin/python
-[{username}@glogin1 ~]$ python --version
-Python 3.11.7
-```
+When working with a supercomputer that is disconnected from the internet, it becomes challenging to install and manage software dependencies. [Singularity containers](https://docs.sylabs.io/guides/3.5/user-guide/index.html) provide a solution to this problem.
 
-The login nodes are the only nodes accessible from external networks, and **no connections from the cluster to the outside world are permitted for security reasons.**
+A Singularity container is a lightweight, portable, and self-contained environment that encapsulates all the necessary software dependencies, libraries, and configurations required to run an application. It allows you to package your entire application stack, including the operating system, into a single file.
 
-> [!WARNING] 
-> All file transfers from/to the outside must be executed from your local machine and **not within the cluster.**
+Advantages include:
 
-In general, to copy files or directories from an external machine to MareNostrum 5:
+ * **Isolation**: Singularity containers provide isolation between the host system and the application. This isolation ensures that the application runs consistently, regardless of the underlying system configuration. It prevents conflicts between different software versions and libraries.
 
-```bash
-mylaptop$> scp -r "mylaptop_SOURCE_dir" {username}@transfer1.bsc.es:"MN5_DEST_dir"
-```
+ * **Portability**: Singularity containers are highly portable. You can create a container on one system and run it on another without worrying about compatibility issues. This portability is especially useful when transferring work between different supercomputers or sharing code with collaborators.
 
-So to use this repository in MareNostrum v5
+* **Reproducibility**: Singularity containers enable reproducibility by capturing the exact software environment in which an application was developed and tested. This ensures that the application behaves consistently across different systems and eliminates the "works on my machine" problem.
+
+* **Ease of deployment**: Singularity containers simplify the deployment process. Instead of manually installing and configuring software dependencies on the supercomputer, you can simply transfer the container file and run it. This saves time and effort, especially when dealing with complex software stacks.
+
+* **Security**: Singularity containers provide a secure execution environment. Since the supercomputer is disconnected from the internet, there is a reduced risk of security vulnerabilities. By using Singularity containers, you can ensure that the application runs in an isolated environment without exposing the host system to potential threats.
+
+
+## Setup
+
+ 1. [Install singularity](https://docs.sylabs.io/guides/3.5/user-guide/quick_start.html#quick-installation-steps) on locally on your laptop 
+ 2. Clone this repository
 
 ```bash
 mylaptop$> git clone https://github.com/BioGeek/multi_gpu_training.git
-mylaptop$> scp -r "multi_gpu_training" {username}@transfer1.bsc.es:"~/multi_gpu_training" #TODO use rsync instead?
 ```
 
-> [!NOTE]  
-> This is the reason why this repository contains a virtual environment (`.venv` folder). If you need to install
-> an extra package you can't pip install it on MareNostrum but you will have to add it locally and sync the .venv folder
+ 3. build the Singularity container locally
+
+```bash
+mylaptop$> make build
+```
+
+  4. Download the MNIST data
+
+```bash
+mylaptop$> cd 01_single_gpu
+mylaptop$> python download_data.py
+mylaptop$> cd ..
+```
+
+ 5. Upload the repository (including data and singularity file) to the MareNostrum transfer node
+
+```bash
+mylaptop$> cd .. 
+mylaptop$> rsync -avz --ignore-existing multi_gpu_training {username}@transfer1.bsc.es:"~/"
+```
+
 
 ### Authorship
 
 The [original version of this guide](https://github.com/PrincetonUniversity/multi_gpu_training) was created by Mengzhou Xia, Alexander Wettig and Jonathan Halverson. Members of Princeton Research Computing made contributions to this material.
 
-Tis version has been adapted for the MareNostrum 5 supercomputer by Jeroen Van Goey
+This version has been adapted for the MareNostrum 5 supercomputer by Jeroen Van Goey

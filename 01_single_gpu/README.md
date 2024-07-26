@@ -9,22 +9,13 @@ This tutorial uses PyTorch but the steps are the similar for TensorFlow. See our
 ## Step 1: Load modules
 
 
-```bash
-mylaptop$> ssh {username}@glogin1.bsc.es # General purpuse login node. use `alogin1.bsc.es` for the GPU login node
-[{username}@glogin1 ~]$ module load mkl/2024.0 nvidia-hpc-sdk/23.11-cuda11.8 openblas/0.3.27-gcc cudnn/9.0.0-cuda11 tensorrt/10.0.0-cuda11 impi/2021.11 hdf5/1.14.1-2-gcc gcc/11.4.0 python/3.11.5-gcc nccl/2.19.4 pytorch/2.4.0
-$ conda create --name torch-env pytorch torchvision pytorch-cuda=12.1 -c pytorch -c nvidia -y
-$ conda activate torch-env
-$ conda install line_profiler --channel conda-forge
-```
-
-
-For simplicity we will use a pre-installed Conda environmnet. Run these commands to activate the environment:
 
 ```bash
-$ ssh <YourNetID>@adroit.princeton.edu
-$ module load anaconda3/2023.9
-$ conda activate /home/jdh4/.conda/envs/torch-env
+mylaptop$> ssh {username}@alogin1.bsc.es # GPU login node. 
+[{username}@alogin1 ~]$ module load module load singularity/3.11.5
+[{username}@alogin1 ~]$ cd multi_gpu_training
 ```
+
 
 Watch a [video](https://www.youtube.com/watch?v=wqTgM-Wq4YY&t=296s) that covers everything on this page for single-GPU training with [profiling Python](https://researchcomputing.princeton.edu/python-profiling) using `line_profiler`.
 
@@ -33,21 +24,15 @@ Watch a [video](https://www.youtube.com/watch?v=wqTgM-Wq4YY&t=296s) that covers 
 First, inspect the script ([see script](mnist_classify.py)) by running these commands:
 
 ```bash
-(torch-env) $ cd multi_gpu_training/01_single_gpu
-(torch-env) $ cat mnist_classify.py
+[{username}@alogin1 ~]$ cd 01_single_gpu
+[{username}@alogin1 ~]$ cat mnist_classify.py
 ```
 
-We will profile the `train` function using `line_profiler` (see line 39) by adding the following decorator:
+We will profile the `train` function using `line_profiler`. See line 39 where the `@profile` decorator has been added:
 
 ```python
 @profile
 def train(args, model, device, train_loader, optimizer, epoch):
-```
-
-Next, download the data while on the login node since the compute nodes do not have internet access:
-
-```
-(torch-env) $ python download_data.py
 ```
 
 Below is the Slurm script:
@@ -79,13 +64,13 @@ kernprof -o ${SLURM_JOBID}.lprof -l mnist_classify.py --epochs=3
 
 `kernprof` is a profiler that wraps Python. Adroit has two different A100 nodes. Learn how to choose [specific nodes](https://researchcomputing.princeton.edu/systems/adroit#gpus).
 
-Finally, submit the job while specifying the reservation:
+Finally, submit the job.
 
 ```bash
-(torch-env) $ sbatch --reservation=multigpu job.slurm
+(torch-env) $ sbatch job.slurm
 ```
 
-You should find that the code runs in about 20-40 seconds with 1 CPU-core depending on which A100 GPU node was used:
+You should find that the code runs in about 20-40 seconds with 1 CPU-core depending on which H100 GPU node was used:
 
 ```
 $ seff 1937315
