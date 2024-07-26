@@ -35,14 +35,15 @@ We will profile the `train` function using `line_profiler`. See line 39 where th
 def train(args, model, device, train_loader, optimizer, epoch):
 ```
 
-Below is the Slurm script:
+Below is the Slurm script . Several environment variables are set in the Slurm script. To see all of the available environment variables that are set in the Slurm script, we added this line to `job.slurm`: `printenv | grep -i slurm | sort`.
+
 
 ```bash
 #!/bin/bash
 #SBATCH --job-name=mnist         # create a short name for your job
 #SBATCH --nodes=1                # node count
 #SBATCH --ntasks=1               # total number of tasks across all nodes
-#SBATCH --cpus-per-task=20       # cpu-cores per task (>1 if multi-threaded tasks)
+#SBATCH --cpus-per-task=20        # cpu-cores per task (>1 if multi-threaded tasks)
 #SBATCH --gres=gpu:1             # number of gpus per node
 #SBATCH --time=00:05:00          # total run time limit (HH:MM:SS)
 #SBATCH --mail-type=begin        # send email when job begins
@@ -54,7 +55,7 @@ module load singularity/3.11.5
 
 # Function to parse ACC budget
 parse_acc_budget() {
-    bsc_acct | awk '/CPU GROUP BUDGET:/,/USER CONSUMED CPU:/' | grep 'Marenostrum5 ACC' | awk '{print $3}'
+        bsc_acct | awk '/CPU GROUP BUDGET:/,/USER CONSUMED CPU:/' | grep 'Marenostrum5 ACC' | awk '{print $3}'
 }
 
 # Get initial ACC budget
@@ -67,11 +68,14 @@ echo "Running on host" $(hostname)
 # print the slurm environment variables sorted by name
 printenv | grep -i slurm | sort
 
+# Set default value for num_workers if not provided
+: "${num_workers:=1}"
+
 # Print the number of workers being used
-echo "Number of workers: ${num_workers:-1}"
+echo "Number of workers: $num_workers"
 
 # Use the num_workers environment variable, defaulting to 1 if not set
-time singularity run --nv ../pytorch.sif kernprof -o ${SLURM_JOBID}.lprof -l mnist_classify.py --epochs=3 --num-workers=${num_workers:-1}
+time singularity run --nv ../pytorch.sif kernprof -o ${SLURM_JOBID}_num_workers_${num_workers}.lprof -l mnist_classify.py --epochs=3 --num-workers=$num_workers
 
 # Get final ACC budget
 final_budget=$(parse_acc_budget)
@@ -80,24 +84,24 @@ echo "Final ACC budget: $final_budget"
 # Calculate and report spent budget
 spent_budget=$(echo "$initial_budget - $final_budget" | bc)
 echo "Spent compute budget: $spent_budget"
-
 ```
 
 [`kernprof`](https://kernprof.readthedocs.io/en/latest/kernprof.html) is a profiler that wraps Python.
 
-Finally, submit the job with your account to the [queue system](https://www.bsc.es/supportkc/docs/MareNostrum5/slurm#queues-qos).
+Finally, submit the job with your account to the [queue system](https://www.bsc.es/supportkc/docs/MareNostrum5/slurm#queues-qos) with a single worker.
+(The `--export` flag needs to be before the slurm submission script. Also, the `ALL` is needed, otherwise SLURM creates a new environment, separate from the user's environment.)
 
 ```bash
-[{username}@alogin1 01_single_gpu]$ sbatch --account={account} --qos={qos} job.slurm --export=num_workers='1'
+[{username}@alogin1 01_single_gpu]$ sbatch --account={account} --qos={qos} --export=ALL,num_workers=1  job.slurm
 Submitted batch job {slurm_jobid}
 ```
 
-You can display all submitted jobs (from all your current accounts/projects) with `squeue`:
+You can display all submitted jobs (from all your current accounts/projects) with `squeue`. The state `R` means the job is allocated and running.
 
 ```bash
 [deep789424@alogin1 01_single_gpu]$ squeue
-             JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)
-           {slurm_jobid}       acc    mnist {username}  R       0:12      1 as01r1b16
+    JOBID           PARTITION   NAME    USER        ST  TIME    NODES   NODELIST(REASON)
+    {slurm_jobid}   acc         mnist   {username}  R   0:12    1       as01r1b16
 ```
 
 You should find that the code runs in about 23 seconds (some variation in the run time is expected when multiple users are running on the same node. ) and outputs two files:
@@ -108,7 +112,7 @@ You should find that the code runs in about 23 seconds (some variation in the ru
 Looking into the output, we see we obtained a pretty good accuracy of 99%. For suc a small job, the spent GPU budget is neglible.
 
 ```bash
-[deep789424@alogin1 01_single_gpu]$ cat slurm-{slurm_jobid}.out
+[deep789424@alogin1 01_single_gpu]$ cat slurm-*.out
 
 [omitted training log output]
 Test set: Average loss: 0.0344, Accuracy: 9893/10000 (99%)
@@ -132,7 +136,7 @@ We installed [line_profiler](https://researchcomputing.princeton.edu/python-prof
 ```bash
 [{username}@alogin1 01_single_gpu]$ module load singularity/3.11.5 
 load SINGULARITY/3.11.5 (PATH)
-[{username}@alogin1 01_single_gpu]$ singularity run ../pytorch.sif python -m line_profiler -rmt *.lprof
+[{username}@alogin1 01_single_gpu]$ singularity run ../pytorch.sif python -m line_profiler -rmt *_1.lprof
 Timer unit: 1e-06 s
 
 Total time: 15.8417 s
@@ -182,28 +186,56 @@ One technique that was discussed in the [Performance Tuning Guide](https://pytor
 
 *Credit for image above is [here](https://www.telesens.co/2019/04/04/distributed-data-parallel-training-using-pytorch-on-aws/).*
 
-In `mnist_classify.py`, change `num_workers` from 1 to 8. And then in `job.slurm` change `--cpus-per-task` from 1 to 8. Then run the script again and note the speed-up:
 
-```
-[{username}@alogin1 ~]$ sbatch --reservation=multigpu job.slurm
-```
+First we run the `mnist_classify.py` script again, but now with 4 workers.
 
-How did the profiling data change? Watch the [video](https://www.youtube.com/watch?v=wqTgM-Wq4YY&t=296s) for the solution. For consistency between the Slurm script and PyTorch script, one can use:
 
-```python
-import os
-...
-    cuda_kwargs = {'num_workers': int(os.environ["SLURM_CPUS_PER_TASK"]),
-...
+```bash
+[{username}@alogin1 01_single_gpu]$ sbatch --account={account} --qos={qos} --export=ALL,num_workers=4  job.slurm
+Submitted batch job {slurm_jobid}
 ```
 
-Several environment variables are set in the Slurm script. These can be referenced by the PyTorch script as demonstrated above. To see all of the available environment variables that are set in the Slurm script, add this line to `job.slurm`:
+And we look again at the profiled code:
+
+```bash
+[{username}@alogin1 01_single_gpu]$ singularity run ../pytorch.sif python -m line_profiler -rmt *_4.lprof
+Timer unit: 1e-06 s
+
+Total time: 5.43175 s
+File: mnist_classify.py
+Function: train at line 39
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    39                                           @profile                                                                   
+    40                                           def train(args, model, device, train_loader, optimizer, epoch):            
+    41         3        190.0     63.3      0.0      model.train()                                                          
+    42      2817     768497.2    272.8     14.1      for batch_idx, (data, target) in enumerate(train_loader):              
+    43      2814     160524.5     57.0      3.0          data, target = data.to(device), target.to(device)                  
+    44      2814     149090.8     53.0      2.7          optimizer.zero_grad()                                              
+    45      2814    1672566.4    594.4     30.8          output = model(data)                                               
+    46      2814     113213.0     40.2      2.1          loss = F.nll_loss(output, target)                                  
+    47      2814    1234498.5    438.7     22.7          loss.backward()                                                    
+    48      2814    1313976.3    466.9     24.2          optimizer.step()                                                   
+    49      2814       2364.2      0.8      0.0          if batch_idx % args.log_interval == 0:                             
+    50       564       1870.3      3.3      0.0              print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+    51       282       2192.1      7.8      0.0                  epoch, batch_idx * len(data), len(train_loader.dataset),   
+    52       282      12623.2     44.8      0.2                  100. * batch_idx / len(train_loader), loss.item()))        
+    53       282        143.1      0.5      0.0              if args.dry_run:                                               
+    54                                                           break                                                      
 
 ```
-printenv | sort
+
+We can now see that the training only takes 5.4 seconds (compared to 15.8 seconds for the single worker), and only 14.1% of the time is spendt in `train_loader`.
+
+
+If we do the same with 8 workers, 
+
+```bash
+[{username}@alogin1 01_single_gpu]$ sbatch --account={account} --qos={qos} --export=ALL,num_workers=8  job.slurm
+Submitted batch job {slurm_jobid}
 ```
 
-Consider these external data loading libraries: [ffcv](https://github.com/libffcv/ffcv) and [NVIDIA DALI](https://developer.nvidia.com/dali).
 
 ## Summary
 
