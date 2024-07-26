@@ -26,14 +26,14 @@ Advantages include:
 
 ## Setup
 
- 1. [Install singularity](https://docs.sylabs.io/guides/3.5/user-guide/quick_start.html#quick-installation-steps) on locally on your laptop 
+ 1. [Install singularity](https://docs.sylabs.io/guides/3.5/user-guide/quick_start.html#quick-installation-steps) locally on your laptop 
  2. Clone this repository
 
 ```bash
 mylaptop$> git clone https://github.com/BioGeek/multi_gpu_training.git
 ```
 
- 3. build the Singularity container locally
+ 3. Build the Singularity container locally
 
 ```bash
 mylaptop$> make build
@@ -47,11 +47,11 @@ mylaptop$> python download_data.py
 mylaptop$> cd ..
 ```
 
- 5. Upload the repository (including data and singularity file) to the MareNostrum transfer node
+ 5. Upload the repository (including data and singularity file) via the MareNostrum transfer node to your home directory on the supercomputer
 
 ```bash
 mylaptop$> cd .. 
-mylaptop$> rsync -avz --ignore-existing multi_gpu_training {username}@transfer1.bsc.es:"~/"
+mylaptop$> rsync -avz --progress --ignore-existing multi_gpu_training {username}@transfer1.bsc.es:"~/"
 ```
 
 

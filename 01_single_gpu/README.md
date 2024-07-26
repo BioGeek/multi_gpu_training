@@ -24,8 +24,8 @@ Watch a [video](https://www.youtube.com/watch?v=wqTgM-Wq4YY&t=296s) that covers 
 First, inspect the script ([see script](mnist_classify.py)) by running these commands:
 
 ```bash
-[{username}@alogin1 ~]$ cd 01_single_gpu
-[{username}@alogin1 ~]$ cat mnist_classify.py
+[{username}@alogin1 multi_gpu_training]$ cd 01_single_gpu
+[{username}@alogin1 01_single_gpu]$ cat mnist_classify.py
 ```
 
 We will profile the `train` function using `line_profiler`. See line 39 where the `@profile` decorator has been added:
@@ -42,12 +42,24 @@ Below is the Slurm script:
 #SBATCH --job-name=mnist         # create a short name for your job
 #SBATCH --nodes=1                # node count
 #SBATCH --ntasks=1               # total number of tasks across all nodes
-#SBATCH --cpus-per-task=1        # cpu-cores per task (>1 if multi-threaded tasks)
-#SBATCH --mem=8G                 # total memory per node (4 GB per cpu-core is default)
+#SBATCH --cpus-per-task=20       # cpu-cores per task (>1 if multi-threaded tasks)
 #SBATCH --gres=gpu:1             # number of gpus per node
 #SBATCH --time=00:05:00          # total run time limit (HH:MM:SS)
 #SBATCH --mail-type=begin        # send email when job begins
 #SBATCH --mail-type=end          # send email when job ends
+
+module purge
+module load bsc/1.0
+module load singularity/3.11.5
+
+# Function to parse ACC budget
+parse_acc_budget() {
+    bsc_acct | awk '/CPU GROUP BUDGET:/,/USER CONSUMED CPU:/' | grep 'Marenostrum5 ACC' | awk '{print $3}'
+}
+
+# Get initial ACC budget
+initial_budget=$(parse_acc_budget)
+echo "Initial ACC budget: $initial_budget"
 
 # which gpu node was used
 echo "Running on host" $(hostname)
@@ -55,75 +67,102 @@ echo "Running on host" $(hostname)
 # print the slurm environment variables sorted by name
 printenv | grep -i slurm | sort
 
-module purge
-module load singularity/3.11.5
+# Print the number of workers being used
+echo "Number of workers: ${num_workers:-1}"
 
-singularity run --nv ../pytorch.sif kernprof -o ${SLURM_JOBID}.lprof -l mnist_classify.py --epochs=3
+# Use the num_workers environment variable, defaulting to 1 if not set
+time singularity run --nv ../pytorch.sif kernprof -o ${SLURM_JOBID}.lprof -l mnist_classify.py --epochs=3 --num-workers=${num_workers:-1}
+
+# Get final ACC budget
+final_budget=$(parse_acc_budget)
+echo "Final ACC budget: $final_budget"
+
+# Calculate and report spent budget
+spent_budget=$(echo "$initial_budget - $final_budget" | bc)
+echo "Spent compute budget: $spent_budget"
+
 ```
 
 [`kernprof`](https://kernprof.readthedocs.io/en/latest/kernprof.html) is a profiler that wraps Python.
 
-Finally, submit the job.
+Finally, submit the job with your account to the [queue system](https://www.bsc.es/supportkc/docs/MareNostrum5/slurm#queues-qos).
 
 ```bash
-[{username}@alogin1 ~]$ sbatch job.slurm
+[{username}@alogin1 01_single_gpu]$ sbatch --account={account} --qos={qos} job.slurm --export=num_workers='1'
+Submitted batch job {slurm_jobid}
 ```
 
-You should find that the code runs in about 20-40 seconds with 1 CPU-core depending on which H100 GPU node was used:
+You can display all submitted jobs (from all your current accounts/projects) with `squeue`:
 
-```
-$ seff 1937315
-Job ID: 1937315
-Cluster: adroit
-User/Group: aturing/cses
-State: COMPLETED (exit code 0)
-Cores: 1
-CPU Utilized: 00:00:36
-CPU Efficiency: 94.74% of 00:00:38 core-walltime
-Job Wall-clock time: 00:00:38
-Memory Utilized: 593.32 MB
-Memory Efficiency: 7.24% of 8.00 GB
+```bash
+[deep789424@alogin1 01_single_gpu]$ squeue
+             JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)
+           {slurm_jobid}       acc    mnist {username}  R       0:12      1 as01r1b16
 ```
 
-For jobs that run for longer than 1 minute, one should use the `jobstats` command instead of `seff`. Use `shistory -n` to see which node was used or look in the `slurm-#######.out` file.
+You should find that the code runs in about 23 seconds (some variation in the run time is expected when multiple users are running on the same node. ) and outputs two files:
 
-Some variation in the run time is expected when multiple users are running on the same node. 
+ * {slurm_jobid}.lprof
+ * slurm-{slurm_jobid}.out
+
+Looking into the output, we see we obtained a pretty good accuracy of 99%. For suc a small job, the spent GPU budget is neglible.
+
+```bash
+[deep789424@alogin1 01_single_gpu]$ cat slurm-{slurm_jobid}.out
+
+[omitted training log output]
+Test set: Average loss: 0.0344, Accuracy: 9893/10000 (99%)
+
+Wrote profile results to {slurm_jobid}.lprof
+Inspect results with:
+python -m line_profiler -rmt "{slurm_jobid}.lprof"
+
+real	0m23.061s
+user	0m24.867s
+sys	0m7.626s
+Final ACC budget: 2560000.00
+Spent compute budget: 0
+```
+
 
 ## Step 3: Analyze the Profiling Data
 
 We installed [line_profiler](https://researchcomputing.princeton.edu/python-profiling) into the Singularity container and profiled the code. To analyze the profiling data:
 
-```
-[{username}@alogin1 ~]$ python -m line_profiler -rmt *.lprof 
+```bash
+[{username}@alogin1 01_single_gpu]$ module load singularity/3.11.5 
+load SINGULARITY/3.11.5 (PATH)
+[{username}@alogin1 01_single_gpu]$ singularity run ../pytorch.sif python -m line_profiler -rmt *.lprof
 Timer unit: 1e-06 s
 
-Total time: 30.8937 s
+Total time: 15.8417 s
 File: mnist_classify.py
 Function: train at line 39
 
 Line #      Hits         Time  Per Hit   % Time  Line Contents
 ==============================================================
-    39                                           @profile
-    40                                           def train(args, model, device, train_loader, optimizer, epoch):
-    41         3        213.1     71.0      0.0      model.train()
-    42      2817   26106124.7   9267.3     84.5      for batch_idx, (data, target) in enumerate(train_loader):
-    43      2814     286242.0    101.7      0.9          data, target = data.to(device), target.to(device)
-    44      2814     296440.2    105.3      1.0          optimizer.zero_grad()
-    45      2814    1189206.1    422.6      3.8          output = model(data)
-    46      2814      81578.6     29.0      0.3          loss = F.nll_loss(output, target)
-    47      2814    1979990.2    703.6      6.4          loss.backward()
-    48      2814     841861.9    299.2      2.7          optimizer.step()
-    49      2814       2095.3      0.7      0.0          if batch_idx % args.log_interval == 0:
-    50       564       1852.9      3.3      0.0              print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-    51       282       2218.6      7.9      0.0                  epoch, batch_idx * len(data), len(train_loader.dataset),
-    52       282     105753.3    375.0      0.3                  100. * batch_idx / len(train_loader), loss.item()))
-    53       282        119.2      0.4      0.0              if args.dry_run:
-    54                                                           break
+    39                                           @profile                                                                   
+    40                                           def train(args, model, device, train_loader, optimizer, epoch):            
+    41         3        178.7     59.6      0.0      model.train()                                                          
+    42      2817   11691421.4   4150.3     73.8      for batch_idx, (data, target) in enumerate(train_loader):              
+    43      2814     217178.5     77.2      1.4          data, target = data.to(device), target.to(device)                  
+    44      2814     134220.4     47.7      0.8          optimizer.zero_grad()                                              
+    45      2814    1630352.4    579.4     10.3          output = model(data)                                               
+    46      2814      99303.6     35.3      0.6          loss = F.nll_loss(output, target)                                  
+    47      2814    1103259.3    392.1      7.0          loss.backward()                                                    
+    48      2814     948123.0    336.9      6.0          optimizer.step()                                                   
+    49      2814       1956.3      0.7      0.0          if batch_idx % args.log_interval == 0:                             
+    50       564       1678.7      3.0      0.0              print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+    51       282       2001.9      7.1      0.0                  epoch, batch_idx * len(data), len(train_loader.dataset),   
+    52       282      11930.2     42.3      0.1                  100. * batch_idx / len(train_loader), loss.item()))        
+    53       282        119.8      0.4      0.0              if args.dry_run:                                               
+    54                                                           break                                                      
 
- 30.89 seconds - mnist_classify.py:39 - train
+
+ 15.84 seconds - mnist_classify.py:39 - train
 ```
 
-The slowest line is number 42 which consumes 84.5% of the time in the training function. That line involves `train_loader` which is the data loader for the training set. Are you surprised that the data loader is the slowest step and not the forward pass or calculation of the gradients? Can we improve on this?
+The slowest line is number 42 which consumes 73.8% of the time in the training function. That line involves `train_loader` which is the data loader for the training set. Are you surprised that the data loader is the slowest step and not the forward pass or calculation of the gradients? Can we improve on this?
 
 ### Examine Your GPU Utilization
 
