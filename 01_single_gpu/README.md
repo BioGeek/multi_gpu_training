@@ -75,7 +75,7 @@ printenv | grep -i slurm | sort
 echo "Number of workers: $num_workers"
 
 # Use the num_workers environment variable, defaulting to 1 if not set
-time singularity run --nv ../pytorch.sif kernprof -o ${SLURM_JOBID}_num_workers_${num_workers}.lprof -l mnist_classify.py --epochs=3 --num-workers=$num_workers
+time singularity exec --nv ../pytorch.sif kernprof -o ${SLURM_JOBID}_num_workers_${num_workers}.lprof -l mnist_classify.py --epochs=3 --num-workers=$num_workers
 
 # Get final ACC budget
 final_budget=$(parse_acc_budget)
@@ -136,7 +136,7 @@ We installed [line_profiler](https://researchcomputing.princeton.edu/python-prof
 ```bash
 [{username}@alogin1 01_single_gpu]$ module load singularity/3.11.5 
 load SINGULARITY/3.11.5 (PATH)
-[{username}@alogin1 01_single_gpu]$ singularity run ../pytorch.sif python -m line_profiler -rmt *_1.lprof
+[{username}@alogin1 01_single_gpu]$ singularity exec ../pytorch.sif python -m line_profiler -rmt *_1.lprof
 Timer unit: 1e-06 s
 
 Total time: 15.8417 s
@@ -198,7 +198,7 @@ Submitted batch job {slurm_jobid}
 And we look again at the profiled code:
 
 ```bash
-[{username}@alogin1 01_single_gpu]$ singularity run ../pytorch.sif python -m line_profiler -rmt *_4.lprof
+[{username}@alogin1 01_single_gpu]$ singularity exec ../pytorch.sif python -m line_profiler -rmt *_4.lprof
 Timer unit: 1e-06 s
 
 Total time: 5.43175 s

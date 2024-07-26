@@ -128,12 +128,12 @@ dist.destroy_process_group()
 #SBATCH --nodes=2
 #SBATCH --ntasks-per-node=4
 ...
-srun python simple_dpp.py
+srun singularity exec --nv ../pytorch.sif  python simple_dpp.py
 ```
 
 The Python interpreter will be launched 8 times (2 x 4) and each of the 8 tasks will have a different value of `SLURM_PROCID` from the set 0, 1, 2, 3, 4, 5, 6, 7.
 
-Below is a full Slurm script for using DDP for Della (GPU):
+Below is a full Slurm script for using DDP (GPU):
 
 ```bash
 #!/bin/bash
@@ -141,7 +141,6 @@ Below is a full Slurm script for using DDP for Della (GPU):
 #SBATCH --nodes=2                # node count
 #SBATCH --ntasks-per-node=2      # total number of tasks per node
 #SBATCH --cpus-per-task=8        # cpu-cores per task (>1 if multi-threaded tasks)
-#SBATCH --mem=32G                # total memory per node (4 GB per cpu-core is default)
 #SBATCH --gres=gpu:2             # number of allocated gpus per node
 #SBATCH --time=00:01:00          # total run time limit (HH:MM:SS)
 #SBATCH --mail-type=begin        # send email when job begins
@@ -156,10 +155,10 @@ export MASTER_ADDR=$master_addr
 echo "MASTER_ADDR="$MASTER_ADDR
 
 module purge
-module load anaconda3/2023.9
-conda activate torch-env
+module load bsc/1.0
+module load singularity/3.11.5
 
-srun python simple_dpp.py
+srun singularity exec --nv ../pytorch.sif  python simple_dpp.py
 ```
 
 In the script above, `MASTER_PORT`, `MASTER_ADDR` and `WORLD_SIZE` are set. The three are later used to create the DDP process group. The total number of GPUs allocated to the job must be equal to `WORLD_SIZE` -- this is satisfied above since `nodes` times `ntasks-per-node` is `2 x 2 = 4` and number of GPUs allocated is `nodes` times `gpus_per_node` which is also `2 x 2 = 4`.
@@ -168,7 +167,7 @@ You can run the simple DPP script with:
 
 ```bash
 [{username}@alogin1 multi_gpu_training]$ cd 02_pytorch_ddp
-$ sbatch --account={account} --qos={qos} simple.slurm
+[{username}@alogin1 multi_gpu_training]$ sbatch --account={account} --qos={qos} simple.slurm
 ```
 
 Take a look at the output below. Does it all make sense?
@@ -216,12 +215,12 @@ The `local_rank` should be used everywhere in your script except when initializi
 
 When using DDP, the total number of tasks must equal the total number of allocated GPUs. Therefore, if `--ntasks-per-node=<N>` then you must have `--gres=gpu:<N>`. Here are two examples:
 
-```
+```bash
 #SBATCH --ntasks-per-node=2
 #SBATCH --gres=gpu:2
 ```
 
-```
+```bash
 #SBATCH --ntasks-per-node=4
 #SBATCH --gres=gpu:4
 ```
@@ -238,11 +237,29 @@ Below is an example Slurm script for DDP:
 #SBATCH --nodes=2                # node count
 #SBATCH --ntasks-per-node=2      # total number of tasks per node
 #SBATCH --cpus-per-task=8        # cpu-cores per task (>1 if multi-threaded tasks)
-#SBATCH --mem=32G                # total memory per node (4 GB per cpu-core is default)
-#SBATCH --gres=gpu:2             # number of gpus per node
+#SBATCH --gres=gpu:2             # number of allocated gpus per node
 #SBATCH --time=00:05:00          # total run time limit (HH:MM:SS)
 #SBATCH --mail-type=begin        # send email when job begins
 #SBATCH --mail-type=end          # send email when job ends
+
+module purge
+module load bsc/1.0
+module load singularity/3.11.5
+
+# Function to parse ACC budget
+parse_acc_budget() {
+        bsc_acct | awk '/CPU GROUP BUDGET:/,/USER CONSUMED CPU:/' | grep 'Marenostrum5 ACC' | awk '{print $3}'
+}
+
+# Get initial ACC budget
+initial_budget=$(parse_acc_budget)
+echo "Initial ACC budget: $initial_budget"
+
+# which gpu node was used
+echo "Running on host" $(hostname)
+
+# print the slurm environment variables sorted by name
+printenv | grep -i slurm | sort
 
 export MASTER_PORT=$(get_free_port)
 export WORLD_SIZE=$(($SLURM_NNODES * $SLURM_NTASKS_PER_NODE))
@@ -252,11 +269,16 @@ master_addr=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)
 export MASTER_ADDR=$master_addr
 echo "MASTER_ADDR="$MASTER_ADDR
 
-module purge
-module load anaconda3/2023.9
-conda activate torch-env
+# distribute the python script to all nodes
+time srun singularity exec --nv ../pytorch.sif python mnist_classify_ddp.py --epochs=2
 
-srun python mnist_classify_ddp.py --epochs=2
+# Get final ACC budget
+final_budget=$(parse_acc_budget)
+echo "Final ACC budget: $final_budget"
+
+# Calculate and report spent budget
+spent_budget=$(echo "$initial_budget - $final_budget" | bc)
+echo "Spent compute budget: $spent_budget"
 ```
 
 The script above uses 2 nodes with 2 tasks per node and therefore 2 GPUs per node. This yields a total of 4 processes and each process can use 8 CPU-cores for data loading. An allocation of 4 GPUs is substantial so the queue time may be long. In all cases make sure that the GPUs are being used efficiently by monitoring the [GPU utilization](https://researchcomputing.princeton.edu/support/knowledge-base/gpu-computing).
@@ -439,26 +461,9 @@ cuda_kwargs = {'num_workers': int(os.environ["SLURM_CPUS_PER_TASK"]), 'pin_memor
 Execute the commands below to run the example above:
 
 ```bash
-$ git clone https://github.com/PrincetonUniversity/multi_gpu_training.git
-$ cd multi_gpu_training/02_pytorch_ddp
-$ module load anaconda3/2023.9
-$ conda activate torch-env
-[{username}@alogin1 ~]$ python download_data.py
-[{username}@alogin1 ~]$ sbatch --reservation=multigpu job.slurm
+[{username}@alogin1 02_pytorch_ddp]$ sbatch --account={account}  --qos={qos} job.slurm 
 ```
 
 ## Memory issues
 
 Use `gradient_as_bucket_view=True` when making the DDP model to decrease the required memory by 1/3.
-
-## NGC Container
-
-If you are using the [PyTorch container](https://researchcomputing.princeton.edu/support/knowledge-base/pytorch#containers) then the last line of your Slurm script will look like:
-
-```
-srun singularity exec --nv $HOME/software/pytorch_23.09-py3.sif python mnist_classify_ddp.py --epochs=3
-```
-
-## Notes on Traverse
-
-Be sure to use the example above for DDP. Do not use the file-based method for initializing the process group. Be sure to follow the [installation directions](https://researchcomputing.princeton.edu/support/knowledge-base/tensorflow#install) using the MIT Conda channel.

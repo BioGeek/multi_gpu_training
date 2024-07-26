@@ -36,7 +36,7 @@ export MASTER_ADDR=$master_addr
 echo "MASTER_ADDR="$MASTER_ADDR
 
 # distribute the python script to all nodes
-time srun singularity run --nv ../pytorch.sif python mnist_classify_ddp.py --epochs=2
+time srun singularity exec --nv ../pytorch.sif python mnist_classify_ddp.py --epochs=2
 
 # Get final ACC budget
 final_budget=$(parse_acc_budget)

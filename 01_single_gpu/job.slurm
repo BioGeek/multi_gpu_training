@@ -34,7 +34,7 @@ printenv | grep -i slurm | sort
 echo "Number of workers: $num_workers"
 
 # Use the num_workers environment variable, defaulting to 1 if not set
-time singularity run --nv ../pytorch.sif kernprof -o ${SLURM_JOBID}_num_workers_${num_workers}.lprof -l mnist_classify.py --epochs=3 --num-workers=$num_workers
+time singularity exec --nv ../pytorch.sif kernprof -o ${SLURM_JOBID}_num_workers_${num_workers}.lprof -l mnist_classify.py --epochs=3 --num-workers=$num_workers
 
 # Get final ACC budget
 final_budget=$(parse_acc_budget)

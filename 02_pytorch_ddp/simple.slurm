@@ -20,4 +20,4 @@ module purge
 module load bsc/1.0
 module load singularity/3.11.5
 
-srun singularity run --nv ../pytorch.sif  python simple_dpp.py
+srun singularity exec --nv ../pytorch.sif  python simple_dpp.py
