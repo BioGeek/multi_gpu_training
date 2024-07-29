@@ -77,6 +77,28 @@ From now on, you can access that directory. If you access it, you should see you
 Inside that directory, you can call "git clone", "git pull" or "git push" as you please.
 
 
+ 7. You can also use `rsync` to sync a local folder with your mounted GPFS home directory
+
+ ```bash
+ rsync  --owner --group --chown  {userID}:{grouID} --archive --verbose --update --progress --delete <local_folder> ~/marenostrum5/
+ ```
+
+Meaning of some of the flags:
+
+```bash
+--archive, -a            archive mode 
+--update, -u             skip files that are newer on the receiver
+--verbose, -v            increase verbosity
+--progress               show progress during transfer
+```
+
+ 8. Or you can use `rsync` to sync a local folder via the transfer node
+
+ ```bash
+rsync --owner --group --chown  {userID}:{grouID} -avz --progress --ignore-existing multi_gpu_training {username}@transfer1.bsc.es:"~/"
+```
+
+
 
 ### Authorship
 
