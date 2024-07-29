@@ -1,7 +1,7 @@
 # Multi-GPU Training with PyTorch: Data and Model Parallelism
 
 ## About
-The material in this repo demonstrates multi-GPU training using PyTorch. Part 1 covers how to optimize single-GPU training. The necessary code changes to enable multi-GPU training using the data-parallel and model-parallel approaches are then shown. This workshop aims to prepare researchers to use the new H100 GPU nodes as part of [MareNostrum 5](https://www.bsc.es/supportkc/docs/MareNostrum5/intro/) supercomputer.
+The material in this repo demonstrates multi-GPU training using PyTorch. Part 1 covers how to optimize single-GPU training. The necessary code changes to enable multi-GPU training using the data-parallel and model-parallel approaches are then shown. This workshop aims to prepare researchers to use the new H100 GPU nodes as part of the [MareNostrum 5](https://www.bsc.es/supportkc/docs/MareNostrum5/intro/) supercomputer.
 
 ## Singularity Containers
 
@@ -23,23 +23,41 @@ Advantages include:
 
 * **Security**: Singularity containers provide a secure execution environment. Since the supercomputer is disconnected from the internet, there is a reduced risk of security vulnerabilities. By using Singularity containers, you can ensure that the application runs in an isolated environment without exposing the host system to potential threats.
 
+## Workflow
+
+Workflow at MareNostrum 5 (similar as the workflow described in [Exploitation of the MareNostrum 4 HPC using ARC-CE](https://www.epj-conferences.org/articles/epjconf/abs/2021/05/epjconf_chep2021_02021/epjconf_chep2021_02021.html))
+
+ * We copy all the input files using by mounting a sshfs file system between the your local laptop and the supercomputer
+ * We submit the jobs using the login nodes.
+ * The jobs run on validated Singularity images with all the software and data preloaded.
+ * We check the status of the jobs using the login nodes.
+ * We retrieve the output files using the sshfs filesystem.
 
 ## Setup
 
  1. [Install singularity](https://docs.sylabs.io/guides/3.5/user-guide/quick_start.html#quick-installation-steps) locally on your laptop 
- 2. Clone this repository
+
+
+ 2. Create a directory inside your local machine that will be used as a mount point.
 
 ```bash
+mylaptop$> mkdir ~/marenostrum5
+```
+
+ 3. Clone this repository
+
+```bash
+mylaptop$> cd ~/marenostrum5
 mylaptop$> git clone https://github.com/BioGeek/multi_gpu_training.git
 ```
 
- 3. Build the Singularity container locally
+ 4. Build the Singularity container locally
 
 ```bash
 mylaptop$> make build
 ```
 
-  4. Download the MNIST data
+  5. Download the MNIST data
 
 ```bash
 mylaptop$> cd 01_single_gpu
@@ -47,12 +65,17 @@ mylaptop$> python download_data.py
 mylaptop$> cd ..
 ```
 
- 5. Upload the repository (including data and singularity file) via the MareNostrum transfer node to your home directory on the supercomputer
+ 6. Mount your GPFS home directory on the supercomputer 
+
 
 ```bash
-mylaptop$> cd .. 
-mylaptop$> rsync -avz --progress --ignore-existing multi_gpu_training {username}@transfer1.bsc.es:"~/"
+mylaptop$> sshfs -o workaround=rename {username}@transfer1.bsc.es: ~/marenostrum5
 ```
+
+From now on, you can access that directory. If you access it, you should see your home directory of the GPFS filesystem. Any modifications that you do inside that directory will be replicated to the GPFS filesystem inside the HPC machines.
+
+Inside that directory, you can call "git clone", "git pull" or "git push" as you please.
+
 
 
 ### Authorship

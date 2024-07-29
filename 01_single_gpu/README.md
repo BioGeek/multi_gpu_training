@@ -106,8 +106,8 @@ You can display all submitted jobs (from all your current accounts/projects) wit
 
 You should find that the code runs in about 23 seconds (some variation in the run time is expected when multiple users are running on the same node. ) and outputs two files:
 
- * {slurm_jobid}.lprof
- * slurm-{slurm_jobid}.out
+ * `{slurm_jobid}.lprof`
+ * `slurm-{slurm_jobid}.out`
 
 Looking into the output, we see we obtained a pretty good accuracy of 99%. For suc a small job, the spent GPU budget is neglible.
 
