@@ -12,4 +12,4 @@ wheels/
 pytorch.sif
 
 **/*.lprof
-**/slurm-*.out
+**/*.out
