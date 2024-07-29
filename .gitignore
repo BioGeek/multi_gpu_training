@@ -7,9 +7,17 @@ wheels/
 *.egg-info
 .venv
 
+# Data
 01_single_gpu/data/MNIST/raw/*
+03_pytorch_lightning/multi/cifar-10-python.tar.gz
+03_pytorch_lightning/multi/cifar-10-batches-py/*
 
+# Logs
+03_pytorch_lightning/simple/lightning_logs/*
+
+# Singularity file
 pytorch.sif
 
+# Output files
 **/*.lprof
 **/*.out

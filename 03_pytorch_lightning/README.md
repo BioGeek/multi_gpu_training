@@ -152,27 +152,59 @@ Below is the Slurm script:
 
 ```bash
 #!/bin/bash
-#SBATCH --job-name=lightning     # create a short name for your job
-#SBATCH --nodes=1                # node count
-#SBATCH --ntasks-per-node=2      # total number of tasks across all nodes
+#SBATCH --job-name=ddp-torch     # create a short name for your job
+#SBATCH --nodes=2                # node count
+#SBATCH --ntasks-per-node=2      # total number of tasks per node
 #SBATCH --cpus-per-task=8        # cpu-cores per task (>1 if multi-threaded tasks)
-#SBATCH --mem-per-cpu=4G         # memory per cpu-core (4G per cpu-core is default)
-#SBATCH --time=00:02:00          # total run time limit (HH:MM:SS)
-#SBATCH --gres=gpu:2             # number of gpus per node
+#SBATCH --gres=gpu:2             # number of allocated gpus per node
+#SBATCH --time=00:05:00          # total run time limit (HH:MM:SS)
 #SBATCH --mail-type=begin        # send email when job begins
 #SBATCH --mail-type=end          # send email when job ends
 
 module purge
-module load anaconda3/2023.9
-conda activate bolts-env
+module load bsc/1.0
+module load singularity/3.11.5
 
-srun python myscript.py
+# Function to parse ACC budget
+parse_acc_budget() {
+        bsc_acct | awk '/CPU GROUP BUDGET:/,/USER CONSUMED CPU:/' | grep 'Marenostrum5 ACC' | awk '{print $3}'
+}
+
+# Get initial ACC budget
+initial_budget=$(parse_acc_budget)
+echo "Initial ACC budget: $initial_budget"
+
+# which gpu node was used
+echo "Running on host" $(hostname)
+
+# print the slurm environment variables sorted by name
+printenv | grep -i slurm | sort
+
+export MASTER_PORT=$(get_free_port)
+export WORLD_SIZE=$(($SLURM_NNODES * $SLURM_NTASKS_PER_NODE))
+echo "WORLD_SIZE="$WORLD_SIZE
+
+master_addr=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)
+export MASTER_ADDR=$master_addr
+echo "MASTER_ADDR="$MASTER_ADDR
+
+# distribute the python script to all nodes
+time srun singularity exec --nv ../pytorch.sif python mnist_classify_ddp.py --epochs=2
+
+# Get final ACC budget
+final_budget=$(parse_acc_budget)
+echo "Final ACC budget: $final_budget"
+
+# Calculate and report spent budget
+spent_budget=$(echo "$initial_budget - $final_budget" | bc)
+echo "Spent compute budget: $spent_budget"
 ```
 
 Submit the job:
 
 ```bash
-$ sbatch --reservation=multigpu job.slurm
+[{username}@alogin1 03_pytorch_lightning]$ sbatch --account={account} --qos={qos}  job.slurm
+Submitted batch job {slurm_jobid}
 ```
 
 How does the training time decrease in going from 2 to 1 GPUs? What happens if you use `precision=16`?
@@ -188,17 +220,6 @@ For troubleshooting NCCL try adding these environment variables to your Slurm sc
 ```
 export NCCL_DEBUG=INFO
 export NCCL_DEBUG_SUBSYS=ALL
-```
-
-## Installation
-
-Please do not do this during the workshop:
-
-```bash
-$ module load anaconda3/2023.9
-$ conda create --name bolts-env pytorch torchvision pytorch-cuda=12.1 -c pytorch -c nvidia
-$ conda activate bolts-env
-$ pip install lightning lightning-bolts
 ```
 
 ## Useful Links

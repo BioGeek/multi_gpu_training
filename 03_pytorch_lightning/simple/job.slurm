@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=myjob         # create a short name for your job
+#SBATCH --job-name=lightning     # create a short name for your job
 #SBATCH --nodes=1                # node count
 #SBATCH --ntasks-per-node=1      # total number of tasks across all nodes
 #SBATCH --cpus-per-task=4        # cpu-cores per task (>1 if multi-threaded tasks)
@@ -10,7 +10,8 @@
 #SBATCH --mail-type=end          # send email when job ends
 
 module purge
-module load anaconda3/2023.9
-conda activate torch-pl-env
+module load bsc/1.0
+module load singularity/3.11.5
 
-srun python example.py
+srun singularity exec --nv ../../pytorch.sif  python example.py
+
