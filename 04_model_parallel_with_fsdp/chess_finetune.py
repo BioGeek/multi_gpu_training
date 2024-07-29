@@ -10,7 +10,6 @@ import functools
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.data.distributed import DistributedSampler
 from transformers import AutoTokenizer, AutoModelForCausalLM
-from torch.cuda.amp import autocast, GradScaler
 from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.distributed.fsdp.wrap import lambda_auto_wrap_policy
