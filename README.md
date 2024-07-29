@@ -57,7 +57,7 @@ mylaptop$> git clone https://github.com/BioGeek/multi_gpu_training.git
 mylaptop$> make build
 ```
 
-  5. Download the MNIST data
+  5. Download the MNIST data for [`01_single_gpu`](./01_single_gpu/) and [`02_pytorch_ddp`](./02_pytorch_ddp/)
 
 ```bash
 mylaptop$> cd 01_single_gpu
@@ -65,7 +65,24 @@ mylaptop$> python download_data.py
 mylaptop$> cd ..
 ```
 
- 6. Mount your GPFS home directory on the supercomputer 
+ 6. Download the CIFAR-10 data for [`03_pytorch_lightning`](./03_pytorch_lightning/)
+
+```bash
+mylaptop$> cd 03_pytorch_lightning
+mylaptop$> python download_cifar10.py
+mylaptop$> cd ..
+```
+
+ 7. Dow,load the CodeLlama-7b data for [`04_model_parallel_with_fsdp`](./04_model_parallel_with_fsdp/)
+
+
+```bash
+mylaptop$> cd 04_model_parallel_with_fsdp
+mylaptop$> python download_models.py
+mylaptop$> cd ..
+```
+
+ 8. Mount your GPFS home directory on the supercomputer 
 
 
 ```bash
@@ -77,7 +94,7 @@ From now on, you can access that directory. If you access it, you should see you
 Inside that directory, you can call "git clone", "git pull" or "git push" as you please.
 
 
- 7. You can also use `rsync` to sync a local folder with your mounted GPFS home directory
+ 9. You can also use `rsync` to sync a local folder with your mounted GPFS home directory
 
  ```bash
  rsync  --owner --group --chown  {userID}:{grouID} --archive --verbose --update --progress --delete <local_folder> ~/marenostrum5/
@@ -92,7 +109,7 @@ Meaning of some of the flags:
 --progress               show progress during transfer
 ```
 
- 8. Or you can use `rsync` to sync a local folder via the transfer node
+ 10. Or you can use `rsync` to sync a local folder via the transfer node
 
  ```bash
 rsync --owner --group --chown  {userID}:{grouID} -avz --progress --ignore-existing multi_gpu_training {username}@transfer1.bsc.es:"~/"

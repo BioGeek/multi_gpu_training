@@ -11,6 +11,7 @@ wheels/
 01_single_gpu/data/MNIST/raw/*
 03_pytorch_lightning/multi/cifar-10-python.tar.gz
 03_pytorch_lightning/multi/cifar-10-batches-py/*
+04_model_parallel_with_fsdp/.cache/*
 
 # Logs
 03_pytorch_lightning/simple/lightning_logs/*

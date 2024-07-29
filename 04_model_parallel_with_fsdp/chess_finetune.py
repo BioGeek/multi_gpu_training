@@ -115,7 +115,7 @@ def train(model, dataset, args):
     lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_schedule)
 
     # AMP Setup
-    scaler = GradScaler()
+    scaler = torch.amp.GradScaler()
 
     # For demonstration purposes only: Print nvidia-smi GPU interface
     logger.info(subprocess.check_output(["nvidia-smi"]).decode("utf-8"))
@@ -132,7 +132,7 @@ def train(model, dataset, args):
         batch = {k: v.to(device) for k, v in batch.items()}
 
         # AMP autocast
-        with autocast(dtype=torch.bfloat16):
+        with torch.amp.autocast(dtype=torch.bfloat16):
             outputs = model(**batch, use_cache=False)
             loss = outputs.loss / args.gradient_accumulation_steps
 
