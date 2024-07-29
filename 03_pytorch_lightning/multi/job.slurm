@@ -2,7 +2,7 @@
 #SBATCH --job-name=lightning     # create a short name for your job
 #SBATCH --nodes=1                # node count
 #SBATCH --ntasks-per-node=2      # total number of tasks across all nodes
-#SBATCH --cpus-per-task=8        # cpu-cores per task (>1 if multi-threaded tasks)
+#SBATCH --cpus-per-task=40       # cpu-cores per task (>1 if multi-threaded tasks)
 #SBATCH --time=00:02:00          # total run time limit (HH:MM:SS)
 #SBATCH --gres=gpu:2             # number of gpus per node
 #SBATCH --mail-type=begin        # send email when job begins
@@ -38,4 +38,3 @@ echo "Final ACC budget: $final_budget"
 # Calculate and report spent budget
 spent_budget=$(echo "$initial_budget - $final_budget" | bc)
 echo "Spent compute budget: $spent_budget"
-
