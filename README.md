@@ -97,7 +97,7 @@ Inside that directory, you can call "git clone", "git pull" or "git push" as you
  9. You can also use `rsync` to sync a local folder with your mounted GPFS home directory
 
  ```bash
- rsync  --owner --group --chown  {userID}:{grouID} --archive --verbose --update --progress --delete <local_folder> ~/marenostrum5/
+ rsync  --owner --group --chown  {userID}:{grouID} --archive --verbose --update --progress --delete local_folder/ ~/marenostrum5/
  ```
 
 Meaning of some of the flags:
@@ -108,6 +108,10 @@ Meaning of some of the flags:
 --verbose, -v            increase verbosity
 --progress               show progress during transfer
 ```
+
+Note : If you add a `/` after `local_folder` it means "the contents of `local_folder`".  Without the trailing slash, `rsync` will place `local_folder`, including the directory, within `~/marenostrum5/`. This will create a hierarchy that looks like:
+
+`~/marenostrum5/local_folder`
 
  10. Or you can use `rsync` to sync a local folder via the transfer node
 

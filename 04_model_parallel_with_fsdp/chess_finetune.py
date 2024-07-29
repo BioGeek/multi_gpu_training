@@ -132,7 +132,7 @@ def train(model, dataset, args):
         batch = {k: v.to(device) for k, v in batch.items()}
 
         # AMP autocast
-        with torch.amp.autocast(dtype=torch.bfloat16):
+        with torch.amp.autocast(device_type="cuda", dtype=torch.bfloat16):
             outputs = model(**batch, use_cache=False)
             loss = outputs.loss / args.gradient_accumulation_steps
 

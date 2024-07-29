@@ -31,10 +31,8 @@ printenv | grep -i slurm | sort
 total_batch_size=${TOTAL_BATCH_SIZE:-64} # total batch size per optimization
 batch_size_per_device=${BATCH_SIZE_PER_DEVICE:-1} # batch size per device
 
-# Read CUDA_VISIBLE_DEVICES to detect the number of GPUs
-num_gpus=$(jq -n "[$CUDA_VISIBLE_DEVICES] | length")
-
 # Compute the gradient accumulation steps given a total batch size and a batch size per device
+num_gpus=4
 gradient_accumulation_steps=$(($total_batch_size / $batch_size_per_device / $num_gpus))
 
 time singularity exec --nv ../../pytorch.sif torchrun \

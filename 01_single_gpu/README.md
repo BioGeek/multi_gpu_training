@@ -99,7 +99,7 @@ Submitted batch job {slurm_jobid}
 You can display all submitted jobs (from all your current accounts/projects) with `squeue`. The state `R` means the job is allocated and running.
 
 ```bash
-[deep789424@alogin1 01_single_gpu]$ squeue
+[{username}@alogin1 01_single_gpu]$ squeue
     JOBID           PARTITION   NAME    USER        ST  TIME    NODES   NODELIST(REASON)
     {slurm_jobid}   acc         mnist   {username}  R   0:12    1       as01r1b16
 ```
@@ -112,7 +112,7 @@ You should find that the code runs in about 23 seconds (some variation in the ru
 Looking into the output, we see we obtained a pretty good accuracy of 99%. For suc a small job, the spent GPU budget is neglible.
 
 ```bash
-[deep789424@alogin1 01_single_gpu]$ cat slurm-*.out
+[{username}@alogin1 01_single_gpu]$ cat slurm-*.out
 
 [omitted training log output]
 Test set: Average loss: 0.0344, Accuracy: 9893/10000 (99%)
