@@ -51,10 +51,11 @@ mylaptop$> cd ~/marenostrum5
 mylaptop$> git clone https://github.com/BioGeek/multi_gpu_training.git
 ```
 
- 4. Build the Singularity container locally
+ 4. Build the pytorch and Jax Singularity containers locally
 
 ```bash
-mylaptop$> make build
+mylaptop$> make build_pytorch
+mylaptop$> make build_jax
 ```
 
   5. Download the MNIST data for [`01_single_gpu`](./01_single_gpu/) and [`02_pytorch_ddp`](./02_pytorch_ddp/)

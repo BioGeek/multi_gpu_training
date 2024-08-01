@@ -16,8 +16,8 @@ wheels/
 # Logs
 03_pytorch_lightning/simple/lightning_logs/*
 
-# Singularity file
-pytorch.sif
+# Singularity files
+*.sif
 
 # Output files
 **/*.lprof
